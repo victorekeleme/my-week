@@ -1,0 +1,472 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>My week</title>
+<style>
+  :root{
+    --ink:#1f1f1f; --muted:#6b6b6b; --line:#dcdcdc; --paper:#fbfaf8;
+    --teal-bg:#E1F5EE; --teal-dark:#085041; --teal-mid:#0F6E56;
+    --purp-bg:#EEEDFE; --purp-dark:#3C3489; --purp-mid:#534AB7;
+    --amb-bg:#FAEEDA;  --amb-dark:#633806;  --amb-mid:#854F0B;
+    --coral-bg:#FAECE7;--coral-dark:#712B13;--coral-mid:#993C1D;
+  }
+  *{box-sizing:border-box;margin:0;padding:0}
+  body{
+    font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,Helvetica,Arial,sans-serif;
+    background:var(--paper); color:var(--ink);
+    padding:20px 14px 60px; max-width:600px; margin:0 auto;
+    -webkit-tap-highlight-color:transparent;
+  }
+  .eyebrow{font-size:10px;letter-spacing:3px;color:var(--muted);text-align:center;text-transform:uppercase}
+  h1{font-size:30px;font-weight:700;text-align:center;margin-top:4px}
+  .weekof{font-size:13px;font-style:italic;color:var(--muted);text-align:center;margin-top:4px}
+  hr{border:none;border-top:1px solid var(--line);margin:16px 0}
+
+  .toolbar{display:flex;gap:8px;justify-content:center;flex-wrap:wrap;margin-bottom:6px}
+  .toolbar button{
+    font-size:13px;padding:8px 14px;border-radius:8px;border:1px solid var(--line);
+    background:#fff;color:var(--ink);cursor:pointer;font-weight:500;
+  }
+  .toolbar button.active{background:var(--ink);color:#fff;border-color:var(--ink)}
+
+  section{border-radius:12px;padding:16px 14px;margin-bottom:14px}
+  .sec-head{display:flex;justify-content:space-between;align-items:baseline;gap:8px;margin-bottom:10px}
+  .sec-title{font-size:14px;font-weight:700;letter-spacing:.5px}
+  .sec-sub{font-size:11px;text-align:right}
+
+  .s-habits{background:var(--teal-bg)}   .s-habits .sec-title{color:var(--teal-dark)} .s-habits .sec-sub{color:var(--teal-mid)}
+  .s-today{background:var(--purp-bg)}    .s-today .sec-title{color:var(--purp-dark)}  .s-today .sec-sub{color:var(--purp-mid)}
+  .s-week{background:var(--amb-bg)}      .s-week .sec-title{color:var(--amb-dark)}    .s-week .sec-sub{color:var(--amb-mid)}
+  .s-month{background:var(--coral-bg)}   .s-month .sec-title{color:var(--coral-dark)} .s-month .sec-sub{color:var(--coral-mid)}
+
+  /* Habit grid */
+  .day-head{display:grid;grid-template-columns:1fr repeat(7,30px);gap:2px;align-items:center;margin-bottom:2px}
+  .day-head span{font-size:10px;font-weight:700;text-align:center;color:var(--teal-dark)}
+  .habit-row{display:grid;grid-template-columns:1fr repeat(7,30px);gap:2px;align-items:center;padding:5px 0}
+  .habit-name{font-size:14px;color:var(--teal-dark);padding-right:6px;display:flex;align-items:center;gap:6px}
+  .tick{
+    width:22px;height:22px;margin:0 auto;border:1.5px solid var(--teal-mid);border-radius:5px;
+    background:#fff;cursor:pointer;display:flex;align-items:center;justify-content:center;
+    font-size:14px;color:#fff;user-select:none;
+  }
+  .tick.done{background:var(--teal-mid);border-color:var(--teal-mid)}
+  .tick.todaycol{box-shadow:0 0 0 2px var(--teal-mid)}
+  .s-today .tick{border-color:var(--purp-mid)}
+  .s-today .tick.done{background:var(--purp-mid)}
+  .s-today .tick.todaycol{box-shadow:0 0 0 2px var(--purp-mid)}
+  .s-week .tick{border-color:var(--amb-mid)}
+  .s-week .tick.done{background:var(--amb-mid)}
+  .s-week .tick.todaycol{box-shadow:0 0 0 2px var(--amb-mid)}
+  .s-today .day-head span{color:var(--purp-dark)}
+  .s-week .day-head span{color:var(--amb-dark)}
+  .grid-row{display:grid;grid-template-columns:1fr repeat(7,30px);gap:2px;align-items:center;padding:5px 0}
+  .grid-name{font-size:14px;padding-right:6px;display:flex;align-items:center;gap:6px}
+  .s-today .grid-name .goal-text{color:var(--ink)}
+
+  /* Goal rows */
+  .goal-row{display:flex;align-items:center;gap:10px;padding:7px 0}
+  .goal-check{
+    width:22px;height:22px;flex:0 0 22px;border-radius:5px;border:1.5px solid currentColor;
+    background:#fff;cursor:pointer;display:flex;align-items:center;justify-content:center;font-size:14px;user-select:none;
+  }
+  .s-today .goal-check{color:var(--purp-mid)} .s-week .goal-check{color:var(--amb-mid)} .s-month .goal-check{color:var(--coral-mid)}
+  .goal-check.done{color:#fff !important}
+  .s-today .goal-check.done{background:var(--purp-mid)}
+  .s-week .goal-check.done{background:var(--amb-mid)}
+  .s-month .goal-check.done{background:var(--coral-mid)}
+  .goal-text{flex:1;font-size:14px;border:none;background:transparent;color:var(--ink);padding:4px 2px;border-bottom:1px dashed transparent}
+  .goal-text:focus{outline:none;border-bottom:1px dashed var(--muted)}
+  .goal-text.done{text-decoration:line-through;color:var(--muted)}
+  .goal-text::placeholder{color:var(--muted);font-style:italic;opacity:.7}
+
+  .del{
+    display:none;width:24px;height:24px;flex:0 0 24px;border-radius:6px;border:none;
+    background:rgba(0,0,0,.08);color:var(--ink);font-size:14px;cursor:pointer;line-height:1;
+  }
+  body.editing .del{display:block}
+  .add-btn{
+    margin-top:6px;font-size:13px;font-weight:600;border:none;background:transparent;cursor:pointer;padding:6px 2px;
+  }
+  .s-habits .add-btn{color:var(--teal-mid)} .s-today .add-btn{color:var(--purp-mid)}
+  .s-week .add-btn{color:var(--amb-mid)}   .s-month .add-btn{color:var(--coral-mid)}
+
+  .newweek-banner{
+    display:none;background:var(--ink);color:#fff;border-radius:10px;
+    padding:10px 14px;margin-bottom:14px;font-size:13px;
+    align-items:center;justify-content:space-between;gap:10px;
+  }
+  .newweek-banner.show{display:flex}
+  .newweek-banner button{
+    background:#fff;color:var(--ink);border:none;border-radius:7px;
+    padding:6px 12px;font-size:13px;font-weight:600;cursor:pointer;flex:0 0 auto;
+  }
+  .footer-line{font-size:13px;font-style:italic;color:var(--muted);text-align:center;margin-top:6px}
+  .storage-note{font-size:11px;color:var(--muted);text-align:center;margin-top:14px}
+
+  /* ---------- PRINT ---------- */
+  @media print{
+    body{padding:0;max-width:none;-webkit-print-color-adjust:exact;print-color-adjust:exact}
+    .toolbar,.del,.add-btn,.storage-note,.newweek-banner,#historyPanel,#historyToggle{display:none !important}
+    section{break-inside:avoid;border:0.5px solid var(--line)}
+    .goal-text{border-bottom:1px solid var(--line) !important}
+  }
+</style>
+</head>
+<body>
+
+<p class="eyebrow">Specific goals turn the filter on</p>
+<h1>My week</h1>
+<p class="weekof" id="weekof"></p>
+
+<div class="toolbar">
+  <button id="editBtn" onclick="toggleEdit()">Edit lists</button>
+  <button onclick="newWeek()">New week</button>
+  <button onclick="window.print()">Print</button>
+  <button onclick="exportData()">Export</button>
+  <button onclick="document.getElementById('importFile').click()">Import</button>
+  <button onclick="resetAll()">Reset</button>
+  <input type="file" id="importFile" accept=".json,application/json" style="display:none" onchange="importData(this)">
+</div>
+<hr>
+
+<div class="newweek-banner" id="nwBanner">
+  <span id="nwText">A new week has started.</span>
+  <button onclick="newWeek()">Start new week</button>
+</div>
+
+<section class="s-habits">
+  <div class="sec-head"><span class="sec-title">DAILY HABITS</span><span class="sec-sub">same every day — just tick the box</span></div>
+  <div class="day-head"><span></span><span>M</span><span>T</span><span>W</span><span>T</span><span>F</span><span>S</span><span>S</span></div>
+  <div id="habitList"></div>
+  <button class="add-btn" onclick="addHabit()">+ Add habit</button>
+</section>
+
+<section class="s-today">
+  <div class="sec-head"><span class="sec-title">TODAY</span><span class="sec-sub">1–3 max — what would make today a win?</span></div>
+  <div class="day-head"><span></span><span>M</span><span>T</span><span>W</span><span>T</span><span>F</span><span>S</span><span>S</span></div>
+  <div id="todayList"></div>
+  <button class="add-btn" onclick="addGoal('today')">+ Add goal</button>
+</section>
+
+<section class="s-week">
+  <div class="sec-head"><span class="sec-title">THIS WEEK</span><span class="sec-sub">growth needs blocks of time — schedule them</span></div>
+  <div class="day-head"><span></span><span>M</span><span>T</span><span>W</span><span>T</span><span>F</span><span>S</span><span>S</span></div>
+  <div id="weekList"></div>
+  <button class="add-btn" onclick="addGoal('week')">+ Add goal</button>
+</section>
+
+<section class="s-month">
+  <div class="sec-head"><span class="sec-title">THIS MONTH</span><span class="sec-sub">review monthly, not daily</span></div>
+  <div id="monthList"></div>
+  <button class="add-btn" onclick="addGoal('month')">+ Add goal</button>
+</section>
+
+<hr>
+<div id="historyPanel" style="display:none">
+  <div class="sec-head" style="margin-bottom:8px">
+    <span class="sec-title" style="color:var(--ink)">HISTORY</span>
+    <span class="sec-sub" style="color:var(--muted)">last 12 weeks — habits as days ticked</span>
+  </div>
+  <div id="historyBody" style="font-size:13px"></div>
+  <hr>
+</div>
+<p class="footer-line">Glance here every morning — that's what re-primes the filter.</p>
+<p class="footer-line"><a href="#" id="historyToggle" style="color:var(--muted)" onclick="toggleHistory(event)">Show history</a></p>
+<p class="storage-note" id="storageNote">Changes save automatically on this device.</p>
+
+<script>
+const KEY = "my-week-v1";
+
+const DEFAULT = {
+  weekStart: null,
+  history: [],
+  habits: [],
+  today: [],
+  week:  [],
+  month: []
+};
+
+let state = load();
+let canPersist = true;
+
+function load(){
+  try{
+    const raw = localStorage.getItem(KEY);
+    if(raw){
+      const s = JSON.parse(raw);
+      ["today","week"].forEach(k=> (s[k]||[]).forEach(g=>{
+        if(!g.ticks){ g.ticks=[0,0,0,0,0,0,0]; if(g.done) g.ticks[(new Date().getDay()+6)%7]=1; delete g.done; }
+      }));
+      if(!Array.isArray(s.history)) s.history = [];
+      return s;
+    }
+  }catch(e){ canPersist = false; }
+  return JSON.parse(JSON.stringify(DEFAULT));
+}
+function save(){
+  try{ localStorage.setItem(KEY, JSON.stringify(state)); }
+  catch(e){
+    canPersist = false;
+    document.getElementById("storageNote").textContent =
+      "Storage unavailable here — changes last until you close the page. Host or open the file directly to save.";
+  }
+}
+
+function mondayOf(d){
+  const x = new Date(d); const day = (x.getDay()+6)%7; x.setDate(x.getDate()-day); x.setHours(0,0,0,0); return x;
+}
+function fmt(d){ return d.toLocaleDateString(undefined,{month:"short",day:"numeric",year:"numeric"}); }
+
+function ensureWeek(){
+  const mon = mondayOf(new Date()).toISOString();
+  if(!state.weekStart) { state.weekStart = mon; save(); }
+  document.getElementById("weekof").textContent = "Week of " + fmt(new Date(state.weekStart));
+  const stale = state.weekStart !== mon;
+  const banner = document.getElementById("nwBanner");
+  banner.classList.toggle("show", stale);
+  if(stale){
+    document.getElementById("nwText").textContent =
+      "It's now the week of " + fmt(mondayOf(new Date())) + " — reset ticks and today's goals?";
+  }
+}
+
+function todayCol(){ return (new Date().getDay()+6)%7; }
+
+function esc(s){ return s.replace(/&/g,"&amp;").replace(/</g,"&lt;").replace(/"/g,"&quot;"); }
+
+function render(){
+  ensureWeek();
+  const tc = todayCol();
+
+  // habits
+  const hl = document.getElementById("habitList");
+  hl.innerHTML = "";
+  state.habits.forEach((h,i)=>{
+    const row = document.createElement("div"); row.className="habit-row";
+    const name = document.createElement("div"); name.className="habit-name";
+    const del = document.createElement("button"); del.className="del"; del.textContent="\u00d7";
+    del.onclick = ()=>{ state.habits.splice(i,1); save(); render(); };
+    const inp = document.createElement("input"); inp.className="goal-text"; inp.value=h.name;
+    inp.onchange = ()=>{ h.name = inp.value; save(); };
+    name.appendChild(del); name.appendChild(inp);
+    row.appendChild(name);
+    for(let d=0; d<7; d++){
+      const t = document.createElement("div");
+      t.className = "tick" + (h.ticks[d] ? " done":"") + (d===tc ? " todaycol":"");
+      t.textContent = h.ticks[d] ? "\u2713" : "";
+      t.onclick = ()=>{ h.ticks[d] = h.ticks[d]?0:1; save(); render(); };
+      row.appendChild(t);
+    }
+    hl.appendChild(row);
+  });
+
+  // gridded goals: today + this week (7 day ticks per row)
+  [["today","todayList"],["week","weekList"]].forEach(([k,id])=>{
+    const el = document.getElementById(id); el.innerHTML="";
+    state[k].forEach((g,i)=>{
+      const row = document.createElement("div"); row.className="grid-row";
+      const name = document.createElement("div"); name.className="grid-name";
+      const del = document.createElement("button"); del.className="del"; del.textContent="\u00d7";
+      del.onclick = ()=>{ state[k].splice(i,1); save(); render(); };
+      const inp = document.createElement("input"); inp.className="goal-text";
+      inp.value = g.text; inp.placeholder = "Write a specific goal\u2026";
+      inp.onchange = ()=>{ g.text = inp.value; save(); };
+      name.appendChild(del); name.appendChild(inp);
+      row.appendChild(name);
+      for(let d=0; d<7; d++){
+        const t = document.createElement("div");
+        t.className = "tick" + (g.ticks[d] ? " done":"") + (d===tc ? " todaycol":"");
+        t.textContent = g.ticks[d] ? "\u2713" : "";
+        t.onclick = ()=>{ g.ticks[d] = g.ticks[d]?0:1; save(); render(); };
+        row.appendChild(t);
+      }
+      el.appendChild(row);
+    });
+  });
+
+  // month: simple checkbox rows
+  [["month","monthList"]].forEach(([k,id])=>{
+    const el = document.getElementById(id); el.innerHTML="";
+    state[k].forEach((g,i)=>{
+      const row = document.createElement("div"); row.className="goal-row";
+      const del = document.createElement("button"); del.className="del"; del.textContent="\u00d7";
+      del.onclick = ()=>{ state[k].splice(i,1); save(); render(); };
+      const chk = document.createElement("div"); chk.className="goal-check"+(g.done?" done":"");
+      chk.textContent = g.done ? "\u2713" : "";
+      chk.onclick = ()=>{ g.done = g.done?0:1; save(); render(); };
+      const inp = document.createElement("input"); inp.className="goal-text"+(g.done?" done":"");
+      inp.value = g.text; inp.placeholder = "Write a specific goal\u2026";
+      inp.onchange = ()=>{ g.text = inp.value; save(); };
+      row.appendChild(del); row.appendChild(chk); row.appendChild(inp);
+      el.appendChild(row);
+    });
+  });
+}
+
+function addHabit(){ state.habits.push({name:"", ticks:[0,0,0,0,0,0,0]}); save(); render();
+  const inputs = document.querySelectorAll("#habitList .goal-text"); inputs[inputs.length-1].focus(); }
+function addGoal(k){
+  state[k].push(k==="month" ? {text:"", done:0} : {text:"", ticks:[0,0,0,0,0,0,0]});
+  save(); render();
+  const inputs = document.querySelectorAll("#"+k+"List .goal-text"); inputs[inputs.length-1].focus(); }
+
+function toggleEdit(){
+  document.body.classList.toggle("editing");
+  document.getElementById("editBtn").classList.toggle("active");
+}
+
+async function newWeek(){
+  if(!confirm("Start a new week? This clears habit ticks and today's goals. Weekly and monthly goals are kept.")) return;
+  if(confirm("Save a backup first? (You can pick Google Drive from the share options.)")){
+    await saveJson();
+  }
+  state.history.push({
+    weekStart: state.weekStart,
+    habits: state.habits.map(h => ({name:h.name, ticks:h.ticks.slice()})),
+    today:   state.today.map(g => ({text:g.text, ticks:g.ticks.slice()})),
+    week:    state.week.map(g => ({text:g.text, ticks:g.ticks.slice()}))
+  });
+  while(state.history.length > 12) state.history.shift();
+  state.habits.forEach(h=> h.ticks=[0,0,0,0,0,0,0]);
+  state.today = [ {text:"", ticks:[0,0,0,0,0,0,0]} ];
+  state.week.forEach(g=> g.ticks=[0,0,0,0,0,0,0]);
+  state.weekStart = mondayOf(new Date()).toISOString();
+  save(); render();
+}
+
+function toggleHistory(e){
+  e.preventDefault();
+  const p = document.getElementById("historyPanel");
+  const link = document.getElementById("historyToggle");
+  const open = p.style.display !== "none";
+  p.style.display = open ? "none" : "block";
+  link.textContent = open ? "Show history" : "Hide history";
+  if(!open) renderHistory();
+}
+
+function renderHistory(){
+  const el = document.getElementById("historyBody");
+  if(!state.history.length){
+    el.innerHTML = '<p style="color:var(--muted);font-style:italic">No finished weeks yet — history is saved each time you start a new week.</p>';
+    return;
+  }
+  let out = "";
+  state.history.slice().reverse().forEach(w=>{
+    const label = w.weekStart ? fmt(new Date(w.weekStart)) : "Unknown week";
+    out += '<p style="font-weight:600;margin:10px 0 4px">Week of ' + escHtml(label) + '</p>';
+    w.habits.forEach(h=>{
+      const n = h.ticks.reduce((a,b)=>a+b,0);
+      out += '<p style="color:var(--muted);margin:2px 0">' + escHtml(h.name || "(unnamed)") + ' \u2014 ' + n + '/7</p>';
+    });
+  });
+  el.innerHTML = out;
+}
+
+function escHtml(s){ return String(s).replace(/&/g,"&amp;").replace(/</g,"&lt;").replace(/>/g,"&gt;"); }
+
+function resetAll(){
+  if(!confirm("Erase EVERYTHING on this device \u2014 all habits, goals, ticks, and history? Consider tapping Export first if you want a backup.")) return;
+  if(!confirm("Last check: this cannot be undone. Erase all data?")) return;
+  try{ localStorage.removeItem(KEY); }catch(e){}
+  state = JSON.parse(JSON.stringify(DEFAULT));
+  save(); render();
+}
+
+function buildBackup(){
+  return JSON.stringify({
+    app: "my-week",
+    version: 1,
+    exportedAt: new Date().toISOString(),
+    data: state
+  }, null, 2);
+}
+
+function backupFilename(){
+  return "my-week-backup-" + new Date().toISOString().slice(0,10) + ".json";
+}
+
+async function saveJson(){
+  const text = buildBackup();
+  const name = backupFilename();
+  const file = new File([text], name, {type:"application/json"});
+
+  // 1) Mobile share sheet (lets you pick Google Drive)
+  if(navigator.canShare && navigator.canShare({files:[file]})){
+    try{
+      await navigator.share({files:[file], title:"My Week backup"});
+      return true;
+    }catch(e){
+      if(e && e.name === "AbortError") return false; // user cancelled
+      // otherwise fall through to next method
+    }
+  }
+  // 2) Desktop: real save-location picker
+  if(window.showSaveFilePicker){
+    try{
+      const handle = await window.showSaveFilePicker({
+        suggestedName: name,
+        types: [{description:"JSON backup", accept:{"application/json":[".json"]}}]
+      });
+      const w = await handle.createWritable();
+      await w.write(text); await w.close();
+      return true;
+    }catch(e){
+      if(e && e.name === "AbortError") return false;
+    }
+  }
+  // 3) Fallback: plain download to the Downloads folder
+  const blob = new Blob([text], {type:"application/json"});
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement("a");
+  a.href = url; a.download = name;
+  document.body.appendChild(a); a.click();
+  document.body.removeChild(a);
+  URL.revokeObjectURL(url);
+  return true;
+}
+
+function exportData(){ saveJson(); }
+
+function validImport(s){
+  if(!s || typeof s !== "object") return false;
+  if(!Array.isArray(s.habits) || !Array.isArray(s.today) || !Array.isArray(s.week) || !Array.isArray(s.month)) return false;
+  const okTicks = a => Array.isArray(a) && a.length === 7;
+  if(!s.habits.every(h => typeof h.name === "string" && okTicks(h.ticks))) return false;
+  if(!s.today.every(g => typeof g.text === "string" && okTicks(g.ticks))) return false;
+  if(!s.week.every(g => typeof g.text === "string" && okTicks(g.ticks))) return false;
+  if(!s.month.every(g => typeof g.text === "string")) return false;
+  if(s.history !== undefined && !Array.isArray(s.history)) return false;
+  return true;
+}
+
+function importData(input){
+  const file = input.files && input.files[0];
+  input.value = "";
+  if(!file) return;
+  const reader = new FileReader();
+  reader.onload = () => {
+    try{
+      const parsed = JSON.parse(reader.result);
+      const incoming = parsed && parsed.app === "my-week" ? parsed.data : parsed;
+      if(!validImport(incoming)){
+        alert("That file doesn't look like a My Week backup \u2014 nothing was changed.");
+        return;
+      }
+      if(!confirm("Replace everything on this page with the backup? Your current lists and ticks will be overwritten.")) return;
+      state = incoming;
+      if(!Array.isArray(state.history)) state.history = [];
+      save(); render();
+      alert("Backup restored.");
+    }catch(e){
+      alert("Couldn't read that file as JSON \u2014 nothing was changed.");
+    }
+  };
+  reader.readAsText(file);
+}
+
+render();
+</script>
+</body>
+</html>
