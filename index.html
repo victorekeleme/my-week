@@ -167,9 +167,14 @@
 <div id="historyPanel" style="display:none">
   <div class="sec-head" style="margin-bottom:8px">
     <span class="sec-title" style="color:var(--ink)">HISTORY</span>
-    <span class="sec-sub" style="color:var(--muted)">last 12 weeks — habits as days ticked</span>
+    <span class="sec-sub" style="color:var(--muted)">tap a week to expand it</span>
   </div>
   <div id="historyBody" style="font-size:13px"></div>
+  <p style="margin-top:10px;font-size:13px">
+    <a href="#" style="color:var(--muted)" onclick="document.getElementById('viewBackupFile').click();return false">View a backup file (read-only)</a>
+    <input type="file" id="viewBackupFile" accept=".json,application/json" style="display:none" onchange="viewBackup(this)">
+  </p>
+  <div id="backupBody" style="font-size:13px"></div>
   <hr>
 </div>
 <p class="footer-line">Glance here every morning — that's what re-primes the filter.</p>
@@ -328,7 +333,7 @@ async function newWeek(){
     today:   state.today.map(g => ({text:g.text, ticks:g.ticks.slice()})),
     week:    state.week.map(g => ({text:g.text, ticks:g.ticks.slice()}))
   });
-  while(state.history.length > 12) state.history.shift();
+  while(state.history.length > 60) state.history.shift();
   state.habits.forEach(h=> h.ticks=[0,0,0,0,0,0,0]);
   state.today = [ {text:"", ticks:[0,0,0,0,0,0,0]} ];
   state.week.forEach(g=> g.ticks=[0,0,0,0,0,0,0]);
@@ -346,25 +351,86 @@ function toggleHistory(e){
   if(!open) renderHistory();
 }
 
-function renderHistory(){
-  const el = document.getElementById("historyBody");
-  if(!state.history.length){
-    el.innerHTML = '<p style="color:var(--muted);font-style:italic">No finished weeks yet — history is saved each time you start a new week.</p>';
-    return;
+function tickRowHtml(name, ticks){
+  let boxes = "";
+  for(let d=0; d<7; d++){
+    boxes += '<span style="display:inline-block;width:18px;height:18px;border-radius:4px;margin-left:3px;text-align:center;font-size:12px;line-height:18px;'
+      + (ticks[d]
+        ? 'background:var(--teal-mid);color:#fff;border:1.5px solid var(--teal-mid)">\u2713'
+        : 'background:#fff;color:transparent;border:1.5px solid var(--line)">')
+      + '</span>';
+  }
+  return '<div style="display:flex;justify-content:space-between;align-items:center;gap:8px;padding:3px 0">'
+    + '<span style="flex:1;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">' + escHtml(name || "(unnamed)") + '</span>'
+    + '<span style="flex:0 0 auto">' + boxes + '</span></div>';
+}
+
+function weekDetailHtml(w){
+  let out = "";
+  const block = (title, items) => {
+    if(!items || !items.length) return "";
+    let s = '<p style="font-weight:600;font-size:11px;letter-spacing:.5px;color:var(--muted);margin:8px 0 2px">' + title + '</p>';
+    items.forEach(it => { s += tickRowHtml(it.name !== undefined ? it.name : it.text, it.ticks); });
+    return s;
+  };
+  out += block("DAILY HABITS", w.habits);
+  out += block("TODAY GOALS", w.today);
+  out += block("WEEK GOALS", w.week);
+  return out || '<p style="color:var(--muted);font-style:italic">Nothing recorded this week.</p>';
+}
+
+function historyListHtml(list, idPrefix){
+  if(!list.length){
+    return '<p style="color:var(--muted);font-style:italic">No finished weeks yet — history is saved each time you start a new week.</p>';
   }
   let out = "";
-  state.history.slice().reverse().forEach(w=>{
+  list.slice().reverse().forEach((w, idx)=>{
     const label = w.weekStart ? fmt(new Date(w.weekStart)) : "Unknown week";
-    out += '<p style="font-weight:600;margin:10px 0 4px">Week of ' + escHtml(label) + '</p>';
-    w.habits.forEach(h=>{
-      const n = h.ticks.reduce((a,b)=>a+b,0);
-      out += '<p style="color:var(--muted);margin:2px 0">' + escHtml(h.name || "(unnamed)") + ' \u2014 ' + n + '/7</p>';
-    });
+    const total = (w.habits||[]).reduce((a,h)=> a + h.ticks.reduce((x,y)=>x+y,0), 0);
+    const did = idPrefix + "-" + idx;
+    out += '<div style="border:1px solid var(--line);border-radius:8px;margin:6px 0;overflow:hidden">'
+      + '<div style="display:flex;justify-content:space-between;align-items:center;padding:8px 10px;cursor:pointer;background:#fff" '
+      + 'onclick="var d=document.getElementById(\'' + did + '\');d.style.display=d.style.display===\'none\'?\'block\':\'none\'">'
+      + '<span style="font-weight:600">Week of ' + escHtml(label) + '</span>'
+      + '<span style="color:var(--muted);font-size:12px">' + total + ' habit ticks \u2022 tap</span></div>'
+      + '<div id="' + did + '" style="display:none;padding:4px 10px 10px;background:#fff">' + weekDetailHtml(w) + '</div>'
+      + '</div>';
   });
-  el.innerHTML = out;
+  return out;
+}
+
+function renderHistory(){
+  document.getElementById("historyBody").innerHTML = historyListHtml(state.history, "hw");
 }
 
 function escHtml(s){ return String(s).replace(/&/g,"&amp;").replace(/</g,"&lt;").replace(/>/g,"&gt;"); }
+
+function viewBackup(input){
+  const file = input.files && input.files[0];
+  input.value = "";
+  if(!file) return;
+  const reader = new FileReader();
+  reader.onload = () => {
+    const el = document.getElementById("backupBody");
+    try{
+      const parsed = JSON.parse(reader.result);
+      const data = parsed && parsed.app === "my-week" ? parsed.data : parsed;
+      if(!data || !Array.isArray(data.history)){
+        el.innerHTML = '<p style="color:var(--muted);font-style:italic">Couldn\u2019t find history in that file \u2014 your current data is untouched.</p>';
+        return;
+      }
+      const when = parsed.exportedAt ? new Date(parsed.exportedAt).toLocaleDateString() : "unknown date";
+      let out = '<p style="font-weight:600;margin:12px 0 4px">Backup from ' + escHtml(when) + ' \u2014 read-only</p>';
+      // show the backup's in-progress week first, then its archive
+      const current = { weekStart: data.weekStart, habits: data.habits||[], today: data.today||[], week: data.week||[] };
+      out += historyListHtml(data.history.concat([current]), "bw");
+      el.innerHTML = out;
+    }catch(e){
+      el.innerHTML = '<p style="color:var(--muted);font-style:italic">Couldn\u2019t read that file as JSON \u2014 your current data is untouched.</p>';
+    }
+  };
+  reader.readAsText(file);
+}
 
 function resetAll(){
   if(!confirm("Erase EVERYTHING on this device \u2014 all habits, goals, ticks, and history? Consider tapping Export first if you want a backup.")) return;
