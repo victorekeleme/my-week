@@ -108,6 +108,33 @@
     background:#fff;color:var(--ink);border:none;border-radius:7px;
     padding:6px 12px;font-size:13px;font-weight:600;cursor:pointer;flex:0 0 auto;
   }
+  .sec-reset{
+    border:none;background:transparent;cursor:pointer;font-size:16px;line-height:1;
+    padding:2px 6px;margin-left:6px;border-radius:6px;opacity:.75;flex:0 0 auto;
+  }
+  .sec-reset:active{opacity:1;background:rgba(0,0,0,.06)}
+  .s-habits .sec-reset{color:var(--teal-mid)}
+  .s-today .sec-reset{color:var(--purp-mid)}
+  .s-week .sec-reset{color:var(--amb-mid)}
+  .s-month .sec-reset{color:var(--coral-mid)}
+
+  .modal-overlay{
+    display:none;position:fixed;inset:0;background:rgba(31,31,31,.45);
+    z-index:50;align-items:center;justify-content:center;padding:24px;
+  }
+  .modal-overlay.show{display:flex}
+  .modal-card{
+    background:#fff;border-radius:14px;padding:20px 18px;max-width:340px;width:100%;
+    box-shadow:0 10px 30px rgba(0,0,0,.2);
+  }
+  .modal-msg{font-size:15px;line-height:1.45;color:var(--ink)}
+  .modal-actions{display:flex;gap:10px;margin-top:16px}
+  .modal-actions button{
+    flex:1;font-size:14px;font-weight:600;padding:10px;border-radius:9px;cursor:pointer;
+  }
+  .modal-yes{background:var(--ink);color:#fff;border:1px solid var(--ink)}
+  .modal-no{background:#fff;color:var(--ink);border:1px solid var(--line)}
+
   .footer-line{font-size:13px;font-style:italic;color:var(--muted);text-align:center;margin-top:6px}
   .storage-note{font-size:11px;color:var(--muted);text-align:center;margin-top:14px}
 
@@ -143,7 +170,6 @@
   <button onclick="window.print()">Print</button>
   <button onclick="exportData()">Export</button>
   <button onclick="document.getElementById('importFile').click()">Import</button>
-  <button onclick="resetAll()">Reset</button>
   <input type="file" id="importFile" accept=".json,application/json" style="display:none" onchange="importData(this)">
 </div>
 <hr>
@@ -154,28 +180,28 @@
 </div>
 
 <section class="s-habits">
-  <div class="sec-head"><span class="sec-title">DAILY HABITS</span><span class="sec-sub">same every day — just tick the box</span></div>
+  <div class="sec-head"><span class="sec-title">DAILY HABITS</span><span style="flex:1"></span><span class="sec-sub">same every day — just tick the box</span><button class="sec-reset" aria-label="Reset daily habits" onclick="resetSection('habits')">↺</button></div>
   <div class="day-head"><span></span><span>M</span><span>T</span><span>W</span><span>T</span><span>F</span><span>S</span><span>S</span></div>
   <div id="habitList"></div>
   <button class="add-btn" onclick="addHabit()">+ Add habit</button>
 </section>
 
 <section class="s-today">
-  <div class="sec-head"><span class="sec-title">TODAY</span><span class="sec-sub">1–3 max — what would make today a win?</span></div>
+  <div class="sec-head"><span class="sec-title">TODAY</span><span style="flex:1"></span><span class="sec-sub">1–3 max — what would make today a win?</span><button class="sec-reset" aria-label="Reset today" onclick="resetSection('today')">↺</button></div>
   <div class="day-head"><span></span><span>M</span><span>T</span><span>W</span><span>T</span><span>F</span><span>S</span><span>S</span></div>
   <div id="todayList"></div>
   <button class="add-btn" onclick="addGoal('today')">+ Add goal</button>
 </section>
 
 <section class="s-week">
-  <div class="sec-head"><span class="sec-title">THIS WEEK</span><span class="sec-sub">growth needs blocks of time — schedule them</span></div>
+  <div class="sec-head"><span class="sec-title">THIS WEEK</span><span style="flex:1"></span><span class="sec-sub">growth needs blocks of time — schedule them</span><button class="sec-reset" aria-label="Reset this week" onclick="resetSection('week')">↺</button></div>
   <div class="day-head"><span></span><span>M</span><span>T</span><span>W</span><span>T</span><span>F</span><span>S</span><span>S</span></div>
   <div id="weekList"></div>
   <button class="add-btn" onclick="addGoal('week')">+ Add goal</button>
 </section>
 
 <section class="s-month">
-  <div class="sec-head"><span class="sec-title">THIS MONTH</span><span class="sec-sub">review monthly, not daily</span></div>
+  <div class="sec-head"><span class="sec-title">THIS MONTH</span><span style="flex:1"></span><span class="sec-sub">review monthly, not daily</span><button class="sec-reset" aria-label="Reset this month" onclick="resetSection('month')">↺</button></div>
   <div id="monthList"></div>
   <button class="add-btn" onclick="addGoal('month')">+ Add goal</button>
 </section>
@@ -197,6 +223,16 @@
 <p class="footer-line">Glance here every morning — that's what re-primes the filter.</p>
 <p class="footer-line"><a href="#" id="historyToggle" style="color:var(--muted)" onclick="toggleHistory(event)">Show history</a></p>
 <p class="storage-note" id="storageNote">Changes save automatically on this device.</p>
+
+<div class="modal-overlay" id="modal">
+  <div class="modal-card">
+    <p class="modal-msg" id="modalMsg"></p>
+    <div class="modal-actions">
+      <button class="modal-no" id="modalNo">No</button>
+      <button class="modal-yes" id="modalYes">Yes</button>
+    </div>
+  </div>
+</div>
 
 <script>
 const KEY = "my-week-v1";
@@ -340,10 +376,8 @@ function toggleEdit(){
 }
 
 async function newWeek(){
-  if(!confirm("Start a new week? This clears habit ticks and today's goals. Weekly and monthly goals are kept.")) return;
-  if(confirm("Save a backup first? (You can pick Google Drive from the share options.)")){
-    await saveJson();
-  }
+  const backup = await ask("Back up your data before starting the new week?");
+  if(backup) await saveJson();
   state.history.push({
     weekStart: state.weekStart,
     habits: state.habits.map(h => ({name:h.name, ticks:h.ticks.slice()})),
@@ -352,9 +386,32 @@ async function newWeek(){
   });
   while(state.history.length > 60) state.history.shift();
   state.habits.forEach(h=> h.ticks=[0,0,0,0,0,0,0]);
-  state.today = [ {text:"", ticks:[0,0,0,0,0,0,0]} ];
+  state.today = [];
   state.week.forEach(g=> g.ticks=[0,0,0,0,0,0,0]);
   state.weekStart = mondayOf(new Date()).toISOString();
+  save(); render();
+}
+
+function ask(msg, yesLabel, noLabel){
+  return new Promise(resolve => {
+    const m = document.getElementById("modal");
+    document.getElementById("modalMsg").textContent = msg;
+    const yes = document.getElementById("modalYes");
+    const no = document.getElementById("modalNo");
+    yes.textContent = yesLabel || "Yes";
+    no.textContent = noLabel || "No";
+    const done = v => { m.classList.remove("show"); yes.onclick = no.onclick = null; resolve(v); };
+    yes.onclick = () => done(true);
+    no.onclick = () => done(false);
+    m.classList.add("show");
+  });
+}
+
+async function resetSection(k){
+  const labels = {habits:"Daily Habits", today:"Today", week:"This Week", month:"This Month"};
+  const ok = await ask("Reset " + labels[k] + "? This removes everything in that section.", "Reset", "Cancel");
+  if(!ok) return;
+  state[k] = [];
   save(); render();
 }
 
@@ -449,14 +506,6 @@ function viewBackup(input){
   reader.readAsText(file);
 }
 
-function resetAll(){
-  if(!confirm("Erase EVERYTHING on this device \u2014 all habits, goals, ticks, and history? Consider tapping Export first if you want a backup.")) return;
-  if(!confirm("Last check: this cannot be undone. Erase all data?")) return;
-  try{ localStorage.removeItem(KEY); }catch(e){}
-  state = JSON.parse(JSON.stringify(DEFAULT));
-  save(); render();
-}
-
 function buildBackup(){
   return JSON.stringify({
     app: "my-week",
@@ -529,7 +578,7 @@ function importData(input){
   input.value = "";
   if(!file) return;
   const reader = new FileReader();
-  reader.onload = () => {
+  reader.onload = async () => {
     try{
       const parsed = JSON.parse(reader.result);
       const incoming = parsed && parsed.app === "my-week" ? parsed.data : parsed;
@@ -537,7 +586,8 @@ function importData(input){
         alert("That file doesn't look like a My Week backup \u2014 nothing was changed.");
         return;
       }
-      if(!confirm("Replace everything on this page with the backup? Your current lists and ticks will be overwritten.")) return;
+      const ok = await ask("Replace everything on this page with this backup?", "Replace", "Cancel");
+      if(!ok) return;
       state = incoming;
       if(!Array.isArray(state.history)) state.history = [];
       save(); render();

@@ -1,5 +1,5 @@
 // Bump this when index.html/manifest/icons change so the old cache gets replaced.
-const CACHE = "my-week-v1";
+const CACHE = "my-week-v2";
 const ASSETS = [
   "./",
   "./index.html",
