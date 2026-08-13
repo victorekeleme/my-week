@@ -92,6 +92,12 @@
     background:rgba(0,0,0,.08);color:var(--ink);font-size:14px;cursor:pointer;line-height:1;
   }
   body.editing .del{display:block}
+  .mv{
+    display:none;width:24px;height:24px;flex:0 0 24px;border-radius:6px;border:none;
+    background:rgba(0,0,0,.08);color:var(--ink);font-size:12px;cursor:pointer;line-height:1;
+  }
+  body.editing .mv{display:block}
+  .mv:disabled{opacity:.3;cursor:default}
   .add-btn{
     margin-top:6px;font-size:13px;font-weight:600;border:none;background:transparent;cursor:pointer;padding:6px 2px;
   }
@@ -308,7 +314,7 @@ function render(){
     del.onclick = ()=>{ state.habits.splice(i,1); save(); render(); };
     const inp = document.createElement("input"); inp.className="goal-text"; inp.value=h.name;
     inp.onchange = ()=>{ h.name = inp.value; save(); };
-    name.appendChild(del); name.appendChild(inp);
+    name.appendChild(del); name.appendChild(mvBtn(state.habits,i,-1)); name.appendChild(mvBtn(state.habits,i,1)); name.appendChild(inp);
     row.appendChild(name);
     for(let d=0; d<7; d++){
       const t = document.createElement("div");
@@ -331,7 +337,7 @@ function render(){
       const inp = document.createElement("input"); inp.className="goal-text";
       inp.value = g.text; inp.placeholder = "Write a specific goal\u2026";
       inp.onchange = ()=>{ g.text = inp.value; save(); };
-      name.appendChild(del); name.appendChild(inp);
+      name.appendChild(del); name.appendChild(mvBtn(state[k],i,-1)); name.appendChild(mvBtn(state[k],i,1)); name.appendChild(inp);
       row.appendChild(name);
       for(let d=0; d<7; d++){
         const t = document.createElement("div");
@@ -357,10 +363,26 @@ function render(){
       const inp = document.createElement("input"); inp.className="goal-text"+(g.done?" done":"");
       inp.value = g.text; inp.placeholder = "Write a specific goal\u2026";
       inp.onchange = ()=>{ g.text = inp.value; save(); };
-      row.appendChild(del); row.appendChild(chk); row.appendChild(inp);
+      row.appendChild(del); row.appendChild(mvBtn(state[k],i,-1)); row.appendChild(mvBtn(state[k],i,1)); row.appendChild(chk); row.appendChild(inp);
       el.appendChild(row);
     });
   });
+}
+
+function moveItem(arr, i, dir){
+  const j = i + dir;
+  if(j < 0 || j >= arr.length) return;
+  const t = arr[i]; arr[i] = arr[j]; arr[j] = t;
+  save(); render();
+}
+
+function mvBtn(arr, i, dir){
+  const b = document.createElement("button");
+  b.className = "mv";
+  b.textContent = dir < 0 ? "↑" : "↓";
+  b.disabled = (dir < 0 && i === 0) || (dir > 0 && i === arr.length - 1);
+  b.onclick = ()=> moveItem(arr, i, dir);
+  return b;
 }
 
 function addHabit(){ state.habits.push({name:"", ticks:[0,0,0,0,0,0,0]}); save(); render();
