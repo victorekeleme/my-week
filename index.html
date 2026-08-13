@@ -45,7 +45,7 @@
   .day-head{display:grid;grid-template-columns:1fr repeat(7,30px);gap:2px;align-items:center;margin-bottom:2px}
   .day-head span{font-size:10px;font-weight:700;text-align:center;color:var(--teal-dark)}
   .habit-row{display:grid;grid-template-columns:1fr repeat(7,30px);gap:2px;align-items:center;padding:5px 0}
-  .habit-name{font-size:14px;color:var(--teal-dark);padding-right:6px;display:flex;align-items:center;gap:6px}
+  .habit-name{font-size:14px;color:var(--teal-dark);padding-right:6px;display:flex;align-items:center;gap:6px;min-width:0}
   .tick{
     width:22px;height:22px;margin:0 auto;border:1.5px solid var(--teal-mid);border-radius:5px;
     background:#fff;cursor:pointer;display:flex;align-items:center;justify-content:center;
@@ -62,7 +62,7 @@
   .s-today .day-head span{color:var(--purp-dark)}
   .s-week .day-head span{color:var(--amb-dark)}
   .grid-row{display:grid;grid-template-columns:1fr repeat(7,30px);gap:2px;align-items:center;padding:5px 0}
-  .grid-name{font-size:14px;padding-right:6px;display:flex;align-items:center;gap:6px}
+  .grid-name{font-size:14px;padding-right:6px;display:flex;align-items:center;gap:6px;min-width:0}
   .s-today .grid-name .goal-text{color:var(--ink)}
 
   /* Goal rows */
@@ -76,7 +76,7 @@
   .s-today .goal-check.done{background:var(--purp-mid)}
   .s-week .goal-check.done{background:var(--amb-mid)}
   .s-month .goal-check.done{background:var(--coral-mid)}
-  .goal-text{flex:1;font-size:14px;border:none;background:transparent;color:var(--ink);padding:4px 2px;border-bottom:1px dashed transparent}
+  .goal-text{flex:1;min-width:0;width:100%;font-size:14px;border:none;background:transparent;color:var(--ink);padding:4px 2px;border-bottom:1px dashed transparent}
   .goal-text:focus{outline:none;border-bottom:1px dashed var(--muted)}
   .goal-text.done{text-decoration:line-through;color:var(--muted)}
   .goal-text::placeholder{color:var(--muted);font-style:italic;opacity:.7}
@@ -104,6 +104,17 @@
   }
   .footer-line{font-size:13px;font-style:italic;color:var(--muted);text-align:center;margin-top:6px}
   .storage-note{font-size:11px;color:var(--muted);text-align:center;margin-top:14px}
+
+  /* ---------- MOBILE ---------- */
+  @media (max-width:560px){
+    .goal-text{font-size:16px} /* prevents iOS Safari auto-zoom on focus */
+    .habit-name .goal-text, .grid-name .goal-text{font-size:16px}
+    .day-head{grid-template-columns:repeat(7,1fr);gap:2px}
+    .day-head span:first-child{display:none}
+    .habit-row,.grid-row{grid-template-columns:repeat(7,1fr);row-gap:4px;padding:8px 0}
+    .habit-name,.grid-name{grid-column:1 / -1}
+    .tick{margin:0 auto}
+  }
 
   /* ---------- PRINT ---------- */
   @media print{
